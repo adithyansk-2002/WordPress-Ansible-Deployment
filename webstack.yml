@@ -1,0 +1,47 @@
+---
+- name: Configure Web Server
+  hosts: web
+  become: yes
+
+  tasks:
+
+    - name: Install packages
+      dnf:
+        name:
+          - nginx
+          - php
+          - php-fpm
+          - php-mysqlnd
+          - mariadb105-server
+        state: present
+
+    - name: Start nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Start MariaDB
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Start PHP-FPM
+      service:
+        name: php-fpm
+        state: started
+        enabled: yes
+
+    - name: Create website user
+      user:
+        name: websiteuser
+        shell: /bin/bash
+
+    - name: Create website directory
+      file:
+        path: /home/websiteuser/myblog/public
+        state: directory
+        owner: websiteuser
+        group: websiteuser
+        mode: '0755'
