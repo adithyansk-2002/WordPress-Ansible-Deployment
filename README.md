@@ -18,12 +18,19 @@ The deployment includes:
 ## Architecture
 
 EC2 Instance
+
 │
+
 ├── Nginx
+
 ├── PHP-FPM
+
 ├── MariaDB
+
 ├── WordPress
+
 ├── phpMyAdmin
+
 └── SSL (Let's Encrypt)
 
 ## Technologies Used
@@ -41,19 +48,30 @@ EC2 Instance
 
 ## Features
 ✔ Automated web stack deployment
+
 ✔ Automated database creation
+
 ✔ Automated WordPress installation
+
 ✔ SFTP access configuration
+
 ✔ phpMyAdmin integration
+
 ✔ Free SSL certificate configuration
+
 ✔ Personal blog deployment
+
 
 ## Repository Structure
 .
 ├── inventory
+
 ├── webstack.yml
+
 ├── database.yml
+
 ├── wordpress.yml
+
 └── nginx/
 
 ## Deployment
