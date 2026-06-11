@@ -1,32 +1,30 @@
-# WordPress Deployment on AWS using Ansible
+# WordPress Deployment Automation using Ansible
 
-## Overview
+## Project Overview
 
-This project demonstrates automated deployment of a WordPress website on AWS EC2 using Ansible.
+This project automates the deployment of a WordPress website on Amazon Linux 2023 using Ansible.
 
-Features:
-- Amazon Linux 2023
-- Nginx
-- PHP 8+
-- MariaDB/MySQL
-- WordPress
+The deployment includes:
+
+- Nginx Web Server
+- PHP 8.x
+- MariaDB/MySQL Database
+- WordPress CMS
 - phpMyAdmin
-- SFTP User Access
-- DuckDNS Domain
+- SFTP User Configuration
 - Let's Encrypt SSL Certificate
-- Ansible Automation
+- Dynamic DNS using DuckDNS
 
 ## Architecture
 
 EC2 Instance
-    |
-Nginx
-    |
-PHP-FPM
-    |
-WordPress
-    |
-MariaDB
+│
+├── Nginx
+├── PHP-FPM
+├── MariaDB
+├── WordPress
+├── phpMyAdmin
+└── SSL (Let's Encrypt)
 
 ## Technologies Used
 
@@ -40,6 +38,23 @@ MariaDB
 - phpMyAdmin
 - Certbot
 - DuckDNS
+
+## Features
+✔ Automated web stack deployment
+✔ Automated database creation
+✔ Automated WordPress installation
+✔ SFTP access configuration
+✔ phpMyAdmin integration
+✔ Free SSL certificate configuration
+✔ Personal blog deployment
+
+## Repository Structure
+.
+├── inventory
+├── webstack.yml
+├── database.yml
+├── wordpress.yml
+└── nginx/
 
 ## Deployment
 
