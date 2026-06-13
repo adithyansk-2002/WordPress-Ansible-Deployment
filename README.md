@@ -2,11 +2,14 @@
 
 Automated WordPress provisioning on **Amazon Linux 2023** using Ansible. This repository deploys a full LEMP-style stack—Nginx, PHP-FPM, MariaDB, and WordPress—on a single AWS EC2 instance.
 
+![Live WordPress site — About Me page](screenshots/6.jpg)
+
 ## Table of Contents
 
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [What's Included](#whats-included)
+- [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
 - [Repository Structure](#repository-structure)
 - [Configuration](#configuration)
@@ -50,14 +53,62 @@ flowchart TB
 
 | Component | Status | Playbook / Location |
 |-----------|--------|---------------------|
-| Nginx, PHP-FPM, MariaDB | Automated | `webstack.yml` |
-| WordPress database & user | Automated | `database.yml` |
-| WordPress file installation | Automated | `wordpress.yml` |
+| Nginx, PHP-FPM, MariaDB | Automated | `playbooks/webstack.yml` |
+| WordPress database & user | Automated | `playbooks/database.yml` |
+| WordPress file installation | Automated | `playbooks/wordpress.yml` |
 | Nginx vhost (SSL-ready template) | Manual | `nginx/wordpress.conf` |
-| Let's Encrypt SSL | Planned | — |
-| DuckDNS dynamic DNS | Planned | — |
-| phpMyAdmin | Planned | — |
+| Let's Encrypt SSL | Manual | Certbot (see [Screenshots](#ssl-certificate-lets-encrypt)) |
+| phpMyAdmin | Manual | See [Screenshots](#phpmyadmin) |
+| DuckDNS dynamic DNS | Manual | `mytempblog.duckdns.org` |
 | SFTP user access | Planned | — |
+
+## Screenshots
+
+The following screenshots document a full deployment on AWS EC2, from database verification through a live HTTPS-enabled blog.
+
+### Database Setup
+
+MariaDB database and WordPress user created by `playbooks/database.yml`, verified on the EC2 instance:
+
+![MariaDB verification — wordpressdb database and wpuser created](screenshots/1.jpg)
+
+### WordPress Installation
+
+WordPress web installer after playbooks complete and Nginx is configured:
+
+![WordPress setup — welcome screen and database prerequisites](screenshots/2.jpg)
+
+If the web server cannot write `wp-config.php` directly, WordPress provides the configuration to paste manually:
+
+![WordPress setup — manual wp-config.php step](screenshots/3.jpg)
+
+### Admin Dashboard & Live Site
+
+WordPress admin login and dashboard after installation:
+
+![WordPress admin login page](screenshots/4.jpg)
+
+![WordPress admin dashboard — My Personal Blog](screenshots/5.jpg)
+
+Published blog page on the deployed site:
+
+![Live site — About Me page](screenshots/6.jpg)
+
+### phpMyAdmin
+
+Web-based database management for `wordpressdb`:
+
+![phpMyAdmin login page](screenshots/7.jpg)
+
+![phpMyAdmin — wordpressdb tables and server info](screenshots/8.jpg)
+
+### SSL Certificate (Let's Encrypt)
+
+SSL certificate issued with Certbot for `mytempblog.duckdns.org`:
+
+![Certbot — successful certificate generation](screenshots/9.jpg)
+
+![Certbot — active certificate details](screenshots/10.jpg)
 
 ## Prerequisites
 
@@ -82,12 +133,16 @@ sudo dnf install -y ansible
 
 ```
 .
-├── inventory           # Target hosts and connection settings
-├── webstack.yml        # Nginx, PHP-FPM, MariaDB, site user & directory
-├── database.yml        # WordPress database and DB user
-├── wordpress.yml       # WordPress download and installation
-└── nginx/
-    └── wordpress.conf  # Nginx virtual host template
+├── inventory              # Target hosts and connection settings
+├── playbooks/
+│   ├── webstack.yml       # Nginx, PHP-FPM, MariaDB, site user & directory
+│   ├── database.yml       # WordPress database and DB user
+│   └── wordpress.yml      # WordPress download and installation
+├── nginx/
+│   └── wordpress.conf     # Nginx virtual host template
+├── screenshots/           # Deployment screenshots for documentation
+└── docs/
+    └── Wordpress Hosting via Ansible.pdf
 ```
 
 ## Configuration
@@ -118,6 +173,7 @@ ec2-host ansible_host=203.0.113.10 ansible_user=ec2-user ansible_ssh_private_key
 | Database user | `wpuser` |
 | Database password | `StrongPassword123!` |
 | Database host | `localhost` |
+| Domain | `mytempblog.duckdns.org` |
 
 > **Note:** Change default credentials before any production deployment. Consider [Ansible Vault](https://docs.ansible.com/ansible/latest/vault_guide/index.html) for storing secrets.
 
@@ -130,9 +186,9 @@ ec2-host ansible_host=203.0.113.10 ansible_user=ec2-user ansible_ssh_private_key
 Run playbooks **in order** from the repository root:
 
 ```bash
-ansible-playbook -i inventory webstack.yml
-ansible-playbook -i inventory database.yml
-ansible-playbook -i inventory wordpress.yml
+ansible-playbook -i inventory playbooks/webstack.yml
+ansible-playbook -i inventory playbooks/database.yml
+ansible-playbook -i inventory playbooks/wordpress.yml
 ```
 
 ### Deploy Nginx site configuration
@@ -165,19 +221,21 @@ sudo systemctl reload nginx
    sudo chown -R websiteuser:websiteuser /home/websiteuser/myblog/public
    ```
 
+5. Issue an SSL certificate with Certbot and reload Nginx (see [SSL screenshots](#ssl-certificate-lets-encrypt)).
+
 ## Playbook Reference
 
-### `webstack.yml`
+### `playbooks/webstack.yml`
 
 Installs and starts Nginx, PHP-FPM, and MariaDB. Creates the `websiteuser` account and document root at `/home/websiteuser/myblog/public`.
 
 **Packages:** `nginx`, `php`, `php-fpm`, `php-mysqlnd`, `mariadb105-server`
 
-### `database.yml`
+### `playbooks/database.yml`
 
 Creates the WordPress database, application user, and grants full privileges on `wordpressdb.*`.
 
-### `wordpress.yml`
+### `playbooks/wordpress.yml`
 
 Downloads the latest WordPress release from [wordpress.org](https://wordpress.org), extracts it, and copies files into the site document root with correct ownership.
 
@@ -197,7 +255,8 @@ Downloads the latest WordPress release from [wordpress.org](https://wordpress.or
 | 502 Bad Gateway | PHP-FPM not running or wrong socket | Check `systemctl status php-fpm`; verify socket path in Nginx config |
 | Database connection failed | MariaDB down or wrong credentials | Verify service status and values in `database.yml` |
 | WordPress permission errors | Incorrect file ownership | Set owner to `websiteuser:websiteuser` on document root |
-| SSL / certificate errors | Certs not yet issued | Test over HTTP first, or run Certbot before enabling HTTPS |
+| Unable to write `wp-config.php` | Web server lacks write access | Paste config manually as shown in [screenshots](#wordpress-installation) |
+| SSL / certificate errors | Certs not yet issued | Stop Nginx, run Certbot standalone, then reload Nginx |
 
 **Useful diagnostic commands:**
 
@@ -205,6 +264,7 @@ Downloads the latest WordPress release from [wordpress.org](https://wordpress.or
 sudo systemctl status nginx mariadb php-fpm
 sudo tail -f /var/log/nginx/error.log
 mysql -u wpuser -p -h localhost wordpressdb
+sudo certbot certificates
 ```
 
 ## Roadmap
@@ -212,7 +272,7 @@ mysql -u wpuser -p -h localhost wordpressdb
 - [ ] Ansible playbook for Nginx vhost deployment
 - [ ] Certbot / Let's Encrypt automation
 - [ ] DuckDNS dynamic DNS updater
-- [ ] phpMyAdmin installation
+- [ ] phpMyAdmin installation playbook
 - [ ] SFTP user for content uploads
 - [ ] Automated `wp-config.php` generation
 - [ ] Ansible Vault integration for secrets
@@ -228,3 +288,6 @@ mysql -u wpuser -p -h localhost wordpressdb
 | Application runtime | PHP 8 (PHP-FPM) |
 | Database | MariaDB 10.5 |
 | CMS | WordPress |
+| Database admin | phpMyAdmin |
+| SSL | Let's Encrypt (Certbot) |
+| DNS | DuckDNS |
